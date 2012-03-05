@@ -41,22 +41,36 @@ module Completeness
   # In that case list of shares can vary for different objects.
   # Then we can add flipper like :when => lambda { self.has_extended_properties? }
 
+  # Return completeness weight of the field configured for current object
+  def completeness_share_of(field)
+    completeness_shares[field] or raise "Completeness share is not defined for '#{field}' of #{self.class.name}"
+  end
 
   # Determines completeness of 'field' based on +completeness_shares+ conditions.
   # Conditions are verified softly, not raising exception when rule is not applicable.
   def completeness_of(field)
-    share = completeness_shares[field] or raise "Completeness share is not defined for '#{field}' of #{self.class.name}"
+    share = completeness_share_of(field)
     self.send(field).try((share[:if] || self.completeness_defaults[:if]).to_sym) ? share[:weight] : 0
   end
 
+  # Calculates sum of weights of all complete fields
   def completeness
     completeness_shares.keys.inject(0) do |result, field|
       result += completeness_of(field)
     end
   end
 
+  # True if completeness = 100%. In other words if all fields are complete.
   def complete?
     completeness == 100
+  end
+
+  def incomplete_items
+    completeness_shares.keys.select{|field| completeness_of(field) == 0 }
+  end
+
+  def completeness_weight_of(field)
+    completeness_share_of(field)[:weight]
   end
 
 end
