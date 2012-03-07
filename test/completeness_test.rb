@@ -71,6 +71,20 @@ describe Completeness do
     end
   end
 
+  describe "completeness_title_of(field)" do
+    it "should return :title option if specified" do
+      p = Profile.new
+      p.completeness_shares = { first_name:  { weight: 45.5, title: "Your name" } }
+      p.completeness_title_of(:first_name).must_equal "Your name"
+    end
+
+    it "should return humanized field name if :title option is not specified" do
+      p = Profile.new
+      p.completeness_shares = { first_name:  { weight: 45.5 } }
+      p.completeness_title_of(:first_name).must_equal "First Name"
+    end
+  end
+
   it "can be included to the object" do
     class Foo
       attr_accessor :baz, :bar

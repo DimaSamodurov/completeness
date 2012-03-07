@@ -65,12 +65,21 @@ module Completeness
     completeness == 100
   end
 
+  # Returns fields whose completeness = 0
   def incomplete_items
     completeness_shares.keys.select{|field| completeness_of(field) == 0 }
   end
 
+  # Returns completeness weight option of the field
   def completeness_weight_of(field)
     completeness_share_of(field)[:weight]
+  end
+
+  # Returns title of the field:
+  # - as :title option
+  # - as humanized field name if :title option is not specified
+  def completeness_title_of(field)
+    completeness_share_of(field)[:title] || field.to_s.humanize.split.map(&:capitalize).join(' ')
   end
 
 end
