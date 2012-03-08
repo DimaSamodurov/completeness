@@ -37,14 +37,31 @@ module Completeness
     self.completeness_shares = {}
   end
 
+  module ClassMethods
+    # Returns completeness weight option of the field
+    def completeness_weight_of(field)
+      completeness_share_of(field)[:weight]
+    end
+
+    # Returns title of the field:
+    # - as :title option
+    # - as humanized field name if :title option is not specified
+    def completeness_title_of(field)
+      completeness_share_of(field)[:title] || field.to_s.humanize.split.map(&:capitalize).join(' ')
+    end
+
+    # Return completeness weight of the field configured for current object
+    def completeness_share_of(field)
+      completeness_shares[field] or raise "Completeness share is not defined for '#{field}' of #{self.class.name}"
+    end
+  end
+
+  include ClassMethods
+
   # More complex condition can be if object has several states depended on e.g workflow or permissions.
   # In that case list of shares can vary for different objects.
   # Then we can add flipper like :when => lambda { self.has_extended_properties? }
 
-  # Return completeness weight of the field configured for current object
-  def completeness_share_of(field)
-    completeness_shares[field] or raise "Completeness share is not defined for '#{field}' of #{self.class.name}"
-  end
 
   # Determines completeness of 'field' based on +completeness_shares+ conditions.
   # Conditions are verified softly, not raising exception when rule is not applicable.
@@ -66,20 +83,8 @@ module Completeness
   end
 
   # Returns fields whose completeness = 0
-  def incomplete_items
+  def incomplete_fields
     completeness_shares.keys.select{|field| completeness_of(field) == 0 }
-  end
-
-  # Returns completeness weight option of the field
-  def completeness_weight_of(field)
-    completeness_share_of(field)[:weight]
-  end
-
-  # Returns title of the field:
-  # - as :title option
-  # - as humanized field name if :title option is not specified
-  def completeness_title_of(field)
-    completeness_share_of(field)[:title] || field.to_s.humanize.split.map(&:capitalize).join(' ')
   end
 
 end
