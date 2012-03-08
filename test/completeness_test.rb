@@ -104,11 +104,11 @@ describe Completeness do
   describe "incomplete_items" do
     it "should return names of items having zero completeness" do
       p = Profile.new
-      p.incomplete_items.must_equal [:first_name, :last_name, :email, :phone, :addresses]
+      p.incomplete_fields.must_equal [:first_name, :last_name, :email, :phone, :addresses]
       p.first_name, p.last_name = %w(John Doe)
-      p.incomplete_items.must_equal [:email, :phone, :addresses]
+      p.incomplete_fields.must_equal [:email, :phone, :addresses]
       p.email, p.phone, p.addresses = ['john@mail.net', '333222', ['Location1']]
-      p.incomplete_items.must_equal []
+      p.incomplete_fields.must_equal []
     end
   end
 
