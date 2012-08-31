@@ -6,14 +6,15 @@ class Profile
 
   include Completeness
 
-  self.completeness_shares =
+  self.define_completeness(
       {
           first_name:  { :if => 'present?', weight: 20 },
           last_name:   {                    weight: 20 }, # used default :if
           email:       {                    weight: 30 },
-          phone:       {                    weight: 10 },
-          addresses:   { :if => 'any?',     weight: 20 },
+          phone:       {                    weight: 10, boolean_method: 'phone_provided?' },
+          addresses:   { :if => 'any?',     weight: 20, boolean_method: 'address_provided?' },
       }
+  )
 end
 
 describe Completeness do
@@ -112,4 +113,47 @@ describe Completeness do
     end
   end
 
+  describe "boolean_method" do
+    it "defines instance method with name specified" do
+      klass = Class.new do
+        attr_accessor :email, :phone
+
+        include Completeness
+        define_completeness( {
+                                email: { weight: 40 },
+                                phone: { weight: 60, boolean_method: 'phone_provided?' }
+                             }
+        )
+      end
+      profile = klass.new
+      profile.phone_provided?.must_equal false
+      profile.phone = '333-222'
+      profile.phone_provided?.must_equal true
+    end
+  end
+
+  describe "completeness_validate_shares" do
+    before do
+      @klass = Class.new do
+        attr_accessor :email, :phone
+
+        include Completeness
+      end
+    end
+
+    it "raise exception if sum of weights <> 100%" do
+      proc {
+        @klass.class_eval do
+          define_completeness( { email: { weight: 0 }, phone: { weight: 90 } } )
+        end
+      }.must_raise RuntimeError
+    end
+
+    it "does not raise exception if sum of weights == 100%" do
+      @klass.class_eval do
+        define_completeness( { email: { weight: 10 }, phone: { weight: 90 } } )
+      end
+    end
+
+  end
 end

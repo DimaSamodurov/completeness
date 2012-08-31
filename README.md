@@ -19,13 +19,14 @@ class Profile
 
   include Completeness
 
-  completeness_shares =
+  define_completeness(
     {
         first_name:  { :if => 'present?', add: 20 },
         last_name:   { :if => 'present?', add: 20 },
-        email:       { :if => 'present?', add: 40 },
-        addresses:   { :if => 'any?',     add: 20 },
+        email:       { :if => 'present?', add: 40, boolean_method: 'email_provided?' },
+        addresses:   { :if => 'any?',     add: 20, boolean_method: 'address_provided?' },
     }
+  )
 end
 
 p = Profile.new
@@ -34,7 +35,9 @@ p.complete?            # => false
 p.first_name, p.last_name, p.email = %w(John Doe john.doe@mail.net)
 p.completeness         # => 80
 p.complete?            # => false
-p.addresses = ['Location1']
+p.address_provided?    # => false
+p.addresses = ['Crater Grimaldi, Moon, 5.2°S 68.6°W']
+p.address_provided?    # => true
 p.completeness         # => 100
 p.complete?            # => true
 ```

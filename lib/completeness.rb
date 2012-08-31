@@ -38,6 +38,19 @@ module Completeness
   end
 
   module ClassMethods
+
+    def define_completeness(shares, custom_options = {} )
+      default_options = {
+          define_boolean_methods: true,
+          validate_shares: true
+      }
+      options = default_options.merge custom_options
+      self.completeness_shares = shares
+
+      completeness_validate_shares        if options[:validate_shares]
+      completeness_define_boolean_methods if options[:define_boolean_methods]
+    end
+
     # Returns completeness weight option of the field
     def completeness_weight_of(field)
       completeness_share_of(field)[:weight]
@@ -53,6 +66,36 @@ module Completeness
     # Return completeness weight of the field configured for current object
     def completeness_share_of(field)
       completeness_shares[field] or raise "Completeness share is not defined for '#{field}' of #{self.class.name}"
+    end
+
+    protected
+
+    # let we have defined completeness on user model like:
+    #  {
+    #    email:      { title: 'Email address', weight: 80 }
+    #    addresses:  { title: 'Addresses',  weight: 20, boolean_method: 'address_provided' },
+    #  }
+    # then you will get user.address_provided? method defined which return true in case weight of this field > 0.
+    # we defined additional field instead of using user.addresses.present? because it will return true for empty array.
+    def completeness_define_boolean_methods
+      completeness_shares.each do |field, meta|
+        if meta[:boolean_method]
+
+          method_name = "#{meta[:boolean_method]}".to_sym
+
+          raise "Oops, #{method_name} is already defined on the #{self.class.name}." +
+                " Consider another name for boolean field." if method_defined? method_name
+
+          define_method method_name do
+            completeness_of(field) > 0
+          end
+        end
+      end
+    end
+
+    def completeness_validate_shares
+      sum = completeness_shares.values.map{|share| share[:weight]}.inject(0) { |sum, value| sum + value }
+      raise "Expected completeness weights sum to be 100, but got #{sum}." if sum != 100
     end
   end
 
